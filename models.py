@@ -9,6 +9,8 @@ class Usuario(db.Model):
     apellido_paterno = db.Column(db.String(250), nullable= False)
     apellido_materno = db.Column(db.String(250), nullable= True)
     direccion = db.Column(db.String(250), nullable= False)
+    password = db.Column(db.String(250), nullable=True)
+    email = db.Column(db.String(250), nullable=True)
 
     def serialize(self):
         return{
@@ -17,7 +19,9 @@ class Usuario(db.Model):
             "segundo_nombre": self.segundo_nombre,
             "apellido_paterno": self.apellido_paterno,
             "apellido_materno": self.apellido_materno,
-            "direccion": self.direccion
+            "direccion": self.direccion,
+            "password": self.password,
+            "email": self.email
         }
     
     def save(self):

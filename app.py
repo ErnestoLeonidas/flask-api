@@ -7,6 +7,12 @@ from flask_migrate import Migrate
 from models import db, Usuario
 from flask_cors import CORS, cross_origin
 
+# 16. jwt seguridad
+from flask_jwt_extended import create_access_token
+from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import jwt_required
+from flask_jwt_extended import JWTManager
+
 # 3. instanciamos la app
 app = Flask(__name__)
 cors = CORS(app)
@@ -17,13 +23,37 @@ app.config['ENV'] = 'development'
 app.config['SQLALCHEMY_TRACK_MODIFICATION'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 
+# 17. configuracion de seguridad
+app.config['JWT_SECRET_KEY'] = "secret-key"
+app.config["JWT_SECRET_KEY"] = "os.environ.get('super-secret')"
+jwt = JWTManager(app)
+
 db.init_app(app)
 
 Migrate(app, db)
 
+
+# 18. Ruta de login
+@app.route("/login", methods=["POST"])
+def create_token():
+    email = request.json.get("email")
+    password = request.json.get("password")
+
+    user = Usuario.query.filter(Usuario.email == email, Usuario.password == password).first()
+
+    if user == None:
+        return jsonify({ 
+            "estado": "error",
+            "msg": "Error en email o password"}), 401
+
+    access_token = create_access_token(identity=email)
+    return jsonify(access_token=access_token, usuario_id=user.id),200
+
+
 # 5. Creamos la ruta por defecto para saber si mi app esta funcionado
 # 6. ejecutamos el comando en la consola: python app.py o python3 app.py y revisamos nuestro navegador
 @app.route('/')
+@jwt_required()
 def index():
     return 'Hola desde gitpod'
 
@@ -49,13 +79,13 @@ def addUsuario():
 
     return jsonify(user.serialize()),200
 
-# 13. Creamos metodo para consultar un usuario en especifico
+# 13. Creamos método para consultar un usuario en específico
 @app.route('/usuarios/<id>', methods=['GET'])
 def getUsuario(id):
     user = Usuario.query.get(id)
     return jsonify(user.serialize()),200
 
-# 14. Borrar usuario
+# 14. Borrar usuario en específico
 @app.route('/usuarios/<id>', methods=['DELETE'])
 def deleteUsuario(id):
     user = Usuario.query.get(id)
@@ -72,12 +102,12 @@ def updateUsuario(id):
     user.apellido_paterno = request.json.get('apellido_paterno')
     user.apellido_materno = request.json.get('apellido_materno')
     user.direccion = request.json.get('direccion')
+    user.email = request.json.get('email')
+    user.password = request.json.get('password')
 
-    Usuario.save(user)
+    Usuario.update(user)
 
     return jsonify(user.serialize()),200
-
-
 
 
 # 8. comando para iniciar mi app flask: flask db init
